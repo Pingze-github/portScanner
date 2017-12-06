@@ -43,10 +43,12 @@ func scanRange(ip string, portRange [2]int, gomax int, timeout int) []int {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	ip := "192.168.31.1"
+	ip := "127.0.0.1"
 	var portRange = [2]int{1, 65535}
 	gomax := 10000
+	start := time.Now().UnixNano()
 	openPorts := scanRange(ip, portRange, gomax, 3e9)
 	fmt.Println(openPorts)
+	fmt.Println((time.Now().UnixNano() - start) / 1e6)
 }
 
