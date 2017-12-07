@@ -11,18 +11,23 @@ import (
 	"strings"
 )
 
-func scanRange(ip string, portRange [2]int, gomax int, timeout int) []int {
+func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
 
 	finish := make(chan int)
 	channel := make(chan int, gomax)
 	var openPorts []int
+	var timeoutPorts []int
 
 	scan := func (ip string, port int) {
 		// time.Sleep(time.Duration(timeout)) // 模拟超时
 		address := ip + ":" + strconv.Itoa(port)
 		_, err := net.DialTimeout("tcp", address, time.Duration(timeout))
 		if err != nil {
-			//fmt.Println(err)
+			fmt.Println(err)
+			if strings.Contains(err.Error(), "timeout") {
+				//fmt.Println("TIMEOUT")
+				timeoutPorts = append(timeoutPorts, port)
+			}
 		} else {
 			openPorts = append(openPorts, port)
 		}
@@ -31,17 +36,22 @@ func scanRange(ip string, portRange [2]int, gomax int, timeout int) []int {
 			finish <- 0
 		}
 	}
-
-	for port := portRange[0]; port <= portRange[1]; port++ {
-		if port == portRange[1] {
+	num := len(ports);
+	for i := 0; i < num; i++ {
+		if i == num - 1 {
 			channel <- 1
 		} else {
 			channel <- 0
 		}
-		go scan(ip, port)
+		go scan(ip, ports[i])
 	}
 	<- finish
-	return openPorts
+/*	fmt.Println(len(refusedPorts))
+	fmt.Println("拒绝", refusedPorts)
+	fmt.Println(len(timeoutPorts))
+	fmt.Println("超时", timeoutPorts)
+	fmt.Println(len(openPorts))*/
+	return openPorts, timeoutPorts
 }
 
 func join(intArr []int) string {
@@ -61,6 +71,7 @@ var (
 	max int
 	portRange [2]int
 	timeout int
+	ports []int
 )
 
 func init() {
@@ -85,15 +96,11 @@ func init() {
 		}
 		portRange = [2]int{start, end}
 	} else if match2 {
-		splits := strings.Split(port, ",")
-		if len(splits) < 2 {
-			fmt.Println("Error: param port")
-			return
+		portStrings := strings.Split(port, ",")
+		for i := 0; i < len(portStrings); i++ {
+			portInt, _ := strconv.Atoi(portStrings[i])
+			ports = append(ports, portInt)
 		}
-		start, _ := strconv.Atoi(splits[0])
-		end, _ := strconv.Atoi(splits[1])
-		// TODO 这种输入格式时，检测输入的几个端口，而不是范围
-		portRange = [2]int{start, end}
 	} else {
 		start, err := strconv.Atoi(port)
 		if err != nil {
@@ -109,8 +116,17 @@ func main() {
 	//fmt.Println(ip, portRange, max)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	//start := time.Now().UnixNano()
-	openPorts := scanRange(ip, portRange, max, timeout * 1e6)
-	fmt.Println(join(openPorts))
+	if len(ports) == 0 {
+		for port := portRange[0]; port <= portRange[1]; port++ {
+			ports = append(ports, port)
+		}
+	}
+	openPorts, timeoutPorts := scanRange(ip, ports, max, timeout * 1e6)
+	if len(timeoutPorts) > (portRange[1] - portRange[0]) * 9 / 10 {
+		fmt.Println("Error: timeout")
+	} else {
+		fmt.Println(join(openPorts))
+	}
 	//fmt.Println((time.Now().UnixNano() - start) / 1e6, "ms")
 }
 
