@@ -60,12 +60,14 @@ var (
 	port string
 	max int
 	portRange [2]int
+	timeout int
 )
 
 func init() {
 	flag.StringVar(&ip, "ip", "", "IP to detect")
 	flag.StringVar(&port, "port", "", "Ports to detect")
 	flag.IntVar(&max, "max", 5000, "Max concurrent number")
+	flag.IntVar(&timeout, "timeout", 3000, "connect timeout (ms)")
 	flag.Parse()
 	match1, _ := regexp.MatchString("^\\d+-\\d+$", port)
 	match2 := strings.Contains(port, ",")
@@ -107,7 +109,7 @@ func main() {
 	//fmt.Println(ip, portRange, max)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	//start := time.Now().UnixNano()
-	openPorts := scanRange(ip, portRange, max, 3e9)
+	openPorts := scanRange(ip, portRange, max, timeout * 1e6)
 	fmt.Println(join(openPorts))
 	//fmt.Println((time.Now().UnixNano() - start) / 1e6, "ms")
 }

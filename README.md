@@ -2,7 +2,7 @@
 高效率端口扫描器。Go语言编写。
 
 ### 编译
-```go run main.go```
+```go build main.go```
 #### 交叉编译
 Linux x64:
 ```
@@ -11,7 +11,7 @@ SET GOOS=linux
 SET GOARCH=amd64
 go build main.go
 ```
-Windows x64:
+Windows x32:
 ```
 SET CGO_ENABLED=0
 SET GOOS=windows
