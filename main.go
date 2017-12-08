@@ -9,9 +9,13 @@ import (
 	"flag"
 	"regexp"
 	"strings"
+	"sort"
+	"sync"
 )
 
 func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
+
+	var mutex sync.Mutex
 
 	finish := make(chan int)
 	channel := make(chan int, gomax)
@@ -23,13 +27,15 @@ func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
 		address := ip + ":" + strconv.Itoa(port)
 		_, err := net.DialTimeout("tcp", address, time.Duration(timeout))
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 			if strings.Contains(err.Error(), "timeout") {
 				//fmt.Println("TIMEOUT")
 				timeoutPorts = append(timeoutPorts, port)
 			}
 		} else {
+			mutex.Lock()
 			openPorts = append(openPorts, port)
+			defer mutex.Unlock()
 		}
 		i := <- channel
 		if i == 1 {
@@ -55,6 +61,7 @@ func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
 }
 
 func join(intArr []int) string {
+	sort.Sort(sort.IntSlice(intArr))
 	str := ""
 	for i := 0; i < len(intArr); i++ {
 		str += strconv.Itoa(intArr[i])
@@ -123,9 +130,9 @@ func main() {
 	}
 	openPorts, timeoutPorts := scanRange(ip, ports, max, timeout * 1e6)
 	if len(timeoutPorts) > (portRange[1] - portRange[0]) * 9 / 10 {
-		fmt.Println("Error: timeout")
+		fmt.Printf("Error: timeout")
 	} else {
-		fmt.Println(join(openPorts))
+		fmt.Printf(join(openPorts))
 	}
 	//fmt.Println((time.Now().UnixNano() - start) / 1e6, "ms")
 }
