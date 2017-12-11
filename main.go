@@ -22,6 +22,12 @@ func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
 	var openPorts []int
 	var timeoutPorts []int
 
+	addOpenPorts := func (port int) {
+		mutex.Lock()
+		defer mutex.Unlock()
+		openPorts = append(openPorts, port)
+	}
+
 	scan := func (ip string, port int) {
 		// time.Sleep(time.Duration(timeout)) // 模拟超时
 		address := ip + ":" + strconv.Itoa(port)
@@ -33,9 +39,7 @@ func scanRange(ip string, ports []int, gomax int, timeout int) ([]int, []int) {
 				timeoutPorts = append(timeoutPorts, port)
 			}
 		} else {
-			mutex.Lock()
-			openPorts = append(openPorts, port)
-			defer mutex.Unlock()
+			addOpenPorts(port)
 		}
 		i := <- channel
 		if i == 1 {
