@@ -42,7 +42,7 @@ go build main.go
 
 (对全部端口超时的服务器全扫描，理论耗时 Ceil(65536/10000)*3s = 21s。实测结果已经极其逼近理论值)
 
-### 和(Nmap)[https://nmap.org/man/zh/]对比
+### 和 (Nmap)[https://nmap.org/man/zh] 对比
 1. 并发上，portScanner可以达到极高并发；Nmap不并发。portScanner占用的端口资源远多于Nmap（等于并发数），
 但检测速度也远高于Nmap。
 2. 检测方式上，Nmap可以使用TCP-SYN检测（快）、TCP-connect、UDP、TCP+version检测，
